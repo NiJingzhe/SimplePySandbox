@@ -1,6 +1,7 @@
 services:
   sandbox-api:
     build: .
+    # 你可以在这里修改外部端口
     ports:
       - "8000:8000"
     volumes:

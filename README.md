@@ -515,24 +515,66 @@ curl http://localhost:8000/health
 
 ```
 SimplePySandbox/
-├── main.py              # FastAPI主应用
-├── sandbox/             # 沙盒核心模块
+├── main.py                      # FastAPI主应用
+├── manage_environments.py       # 环境管理脚本
+├── run_tests.py                # 测试运行器
+├── sandbox/                    # 沙盒核心模块
 │   ├── __init__.py
-│   ├── executor.py      # 代码执行器
-│   ├── security.py      # 安全策略
-│   └── utils.py         # 工具函数
-├── models/              # 数据模型
+│   ├── executor.py             # 代码执行器
+│   ├── environment_manager.py   # 环境管理器
+│   ├── security.py             # 安全策略
+│   └── utils.py                # 工具函数
+├── models/                     # 数据模型
 │   ├── __init__.py
-│   └── request.py       # 请求/响应模型
-├── config/              # 配置
+│   ├── request.py              # 请求/响应模型
+│   └── environment.py          # 环境模型
+├── config/                     # 配置模块
 │   ├── __init__.py
-│   └── settings.py      # 应用设置
-├── Dockerfile           # Docker镜像配置
-├── docker-compose.yml   # Docker Compose配置
-├── requirements.txt     # Python依赖
-├── .dockerignore        # Docker忽略文件
-├── .gitignore          # Git忽略文件
-└── README.md           # 项目文档
+│   └── settings.py             # 应用设置
+├── tests/                      # 测试套件
+│   ├── __init__.py
+│   ├── conftest.py             # pytest配置
+│   ├── README.md               # 测试文档
+│   ├── data/                   # 测试数据
+│   │   └── pythonocc_example.py
+│   ├── unit/                   # 单元测试
+│   │   ├── test_security.py
+│   │   └── test_utils.py
+│   ├── integration/            # 集成测试
+│   │   ├── test_main.py
+│   │   ├── test_timeout.py
+│   │   ├── test_api_timeout.py
+│   │   └── test_environment.py
+│   ├── system/                 # 系统测试
+│   │   └── test_complete_system.py
+│   ├── performance/            # 性能测试
+│   │   └── test_performance.py
+│   └── legacy/                 # 遗留测试
+├── environments/               # 环境脚本
+│   ├── basic-python.sh
+│   ├── pythonocc-stable.sh
+│   └── pythonocc_cylinder.sh
+├── examples/                   # 使用示例
+│   ├── advanced_example.py
+│   └── client_example.py
+├── data/                       # 数据目录
+│   └── environments/           # 环境数据
+├── Dockerfile                  # Docker镜像配置
+├── docker-compose.yml          # Docker Compose配置
+├── k8s-deployment.yaml         # Kubernetes部署配置
+├── requirements.txt            # Python依赖
+├── pytest.ini                 # pytest配置
+├── start.sh                    # 启动脚本
+├── test.sh                     # 测试脚本
+├── test_pythonocc_curl.sh     # PythonOCC测试脚本
+├── .env.example               # 环境变量示例
+├── .dockerignore              # Docker忽略文件
+├── .gitignore                 # Git忽略文件
+├── LICENSE                    # 许可证
+├── README.md                  # 项目文档
+├── DOCUMENTATION.md           # 详细文档
+├── TESTING.md                 # 测试指南
+└── TEST_REFACTORING_REPORT.md # 测试重构报告
 ```
 
 ## 安全特性
