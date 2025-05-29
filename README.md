@@ -1,3 +1,6 @@
+![Cover](./cover.png)
+
+
 # SimplePySandbox - 安全的Python代码执行沙盒
 
 🐍 一个基于FastAPI的现代化Python代码执行沙盒，支持Docker容器化部署和自定义环境管理。
