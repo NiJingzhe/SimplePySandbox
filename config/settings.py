@@ -1,15 +1,23 @@
 import os
-from pydantic_settings import BaseSettings
-from pydantic import ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from enum import Enum
+
+
+class ExecutionMode(str, Enum):
+    """执行模式枚举"""
+    CONDA = "conda"
 
 
 class Settings(BaseSettings):
     """应用设置"""
     
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True
     )
+    
+    # 执行模式设置
+    EXECUTION_MODE: ExecutionMode = ExecutionMode.CONDA
     
     # 沙盒执行设置
     SANDBOX_TIMEOUT: int = 30
@@ -17,16 +25,9 @@ class Settings(BaseSettings):
     MAX_CODE_LENGTH: int = 100000
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     
-    # Docker设置
-    DOCKER_IMAGE: str = "python:3.11-slim"
-    WORK_DIR: str = "/sandbox"
-    
-    # 资源限制
-    MEMORY_LIMIT: str = "512m"
-    CPU_LIMIT: str = "1"
-    
-    # 网络设置
-    NETWORK_MODE: str = "bridge"
+    # Conda环境设置
+    CONDA_BASE_PATH: str = os.path.expanduser("~/miniconda3")
+    CONDA_ENVS_PATH: str = os.path.expanduser("~/miniconda3/envs")
     
     # 临时目录
     TEMP_DIR: str = "/tmp/sandbox"

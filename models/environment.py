@@ -78,6 +78,8 @@ class EnvironmentResponse(BaseModel):
                 "description": "数据科学环境",
                 "base_image": "continuumio/miniconda3:latest",
                 "docker_image": "sandbox-data-science-env:latest",
+                "conda_env_name": "sandbox-data-science-env",
+                "python_version": "3.11",
                 "status": "ready",
                 "created_at": "2025-05-29T10:00:00Z",
                 "last_used": "2025-05-29T12:30:00Z"
@@ -87,8 +89,11 @@ class EnvironmentResponse(BaseModel):
     
     name: str = Field(..., description="环境名称")
     description: str = Field(..., description="环境描述")
-    base_image: str = Field(..., description="基础Docker镜像")
-    docker_image: str = Field(..., description="构建后的Docker镜像名称")
+    base_image: str = Field(..., description="基础Docker镜像或Python版本")
+    docker_image: Optional[str] = Field(default=None, description="构建后的Docker镜像名称（Docker模式）")
+    conda_env_name: Optional[str] = Field(default=None, description="Conda环境名称（Conda模式）")
+    env_path: Optional[str] = Field(default=None, description="环境路径（Conda模式）")
+    python_version: str = Field(..., description="Python版本")
     status: str = Field(..., description="环境状态: building, ready, failed")
     created_at: str = Field(..., description="创建时间")
     last_used: Optional[str] = Field(default=None, description="最后使用时间")

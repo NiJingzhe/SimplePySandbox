@@ -20,7 +20,7 @@ class EnvironmentManager:
         self.base_url = base_url.rstrip('/')
     
     def create_environment(self, name: str, script_file: str, description: str = "", 
-                         base_image: str = "python:3.11-slim"):
+                         python_version: str = "3.11"):
         """创建环境"""
         
         # 读取脚本文件
@@ -35,14 +35,13 @@ class EnvironmentManager:
         env_config = {
             "name": name,
             "description": description,
-            "base_image": base_image,
             "setup_script": setup_script,
-            "python_version": "3.11"
+            "python_version": python_version
         }
         
         print(f"🔧 创建环境 '{name}'...")
         print(f"📄 脚本文件: {script_file}")
-        print(f"🐳 基础镜像: {base_image}")
+        print(f"🐍 Python版本: {python_version}")
         
         try:
             response = requests.post(f"{self.base_url}/environments", json=env_config)
@@ -52,7 +51,7 @@ class EnvironmentManager:
                 print(f"✅ 环境创建成功!")
                 print(f"   名称: {env_info['name']}")
                 print(f"   状态: {env_info['status']}")
-                print(f"   镜像: {env_info['docker_image']}")
+                print(f"   Python版本: {env_info.get('python_version', '未知')}")
                 return True
             else:
                 print(f"❌ 环境创建失败: {response.text}")
@@ -89,7 +88,7 @@ class EnvironmentManager:
                     print(f"   {status_icon} {env['name']}")
                     print(f"      状态: {env['status']}")
                     print(f"      描述: {env['description']}")
-                    print(f"      基础镜像: {env['base_image']}")
+                    print(f"      Python版本: {env.get('python_version', '未知')}")
                     print(f"      创建时间: {env['created_at']}")
                     if env.get('last_used'):
                         print(f"      最后使用: {env['last_used']}")
@@ -123,8 +122,7 @@ class EnvironmentManager:
                 
                 print(f"   {status_icon} 名称: {env['name']}")
                 print(f"   📝 描述: {env['description']}")
-                print(f"   🐳 基础镜像: {env['base_image']}")
-                print(f"   📦 Docker镜像: {env['docker_image']}")
+                print(f"   🐍 Python版本: {env.get('python_version', '未知')}")
                 print(f"   📊 状态: {env['status']}")
                 print(f"   📅 创建时间: {env['created_at']}")
                 if env.get('last_used'):
@@ -222,7 +220,7 @@ def main():
     create_parser.add_argument("name", help="环境名称")
     create_parser.add_argument("script", help="环境配置脚本文件路径")
     create_parser.add_argument("--description", default="", help="环境描述")
-    create_parser.add_argument("--base-image", default="python:3.11-slim", help="基础Docker镜像")
+    create_parser.add_argument("--python-version", default="3.11", help="Python版本")
     create_parser.add_argument("--wait", action="store_true", help="等待环境构建完成")
     create_parser.add_argument("--wait-timeout", type=int, default=10, help="等待超时时间（分钟）")
     
@@ -257,7 +255,7 @@ def main():
             args.name, 
             args.script, 
             args.description, 
-            args.base_image
+            args.python_version
         )
         
         if success and args.wait:

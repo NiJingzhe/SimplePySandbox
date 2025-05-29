@@ -1,27 +1,21 @@
 #!/bin/bash
 # PythonOCC环境配置脚本 (保守版本)
-# 基础镜像: continuumio/miniconda3:latest
+# 这个脚本在已经创建的conda环境中执行
 
 set -e
 
 echo "🐍 配置PythonOCC环境..."
-
-# 更新conda
-echo "更新conda..."
-conda update -n base conda -y
 
 # 设置conda通道
 echo "设置conda通道..."
 conda config --add channels conda-forge
 conda config --set channel_priority flexible
 
-# 安装基础依赖
+# 安装基础依赖 (不指定python版本，使用环境中已有的)
 echo "安装基础依赖..."
 conda install -y \
-    python=3.9 \
     pip \
     numpy \
-    matplotlib
 
 # 尝试安装pythonocc-core的较老稳定版本
 echo "安装pythonocc-core..."
@@ -37,7 +31,7 @@ python -c "
 import sys
 print(f'Python version: {sys.version}')
 try:
-    from OCC.Core import gp_Pnt
+    from OCC.Core.gp import gp_Pnt
     print('✅ PythonOCC导入成功!')
 except Exception as e:
     print(f'⚠️  PythonOCC导入警告: {e}')
@@ -48,3 +42,6 @@ echo "清理..."
 conda clean -a -y
 
 echo "✅ PythonOCC环境配置完成!"
+
+# 确保脚本正常退出
+exit 0

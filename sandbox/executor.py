@@ -1,10 +1,10 @@
-import docker
 import asyncio
-import tempfile
+import subprocess
 import os
 import base64
 import time
-import shutil
+import sys
+import signal
 from typing import Dict, Optional
 from pathlib import Path
 
@@ -14,18 +14,23 @@ from .utils import create_secure_temp_dir, cleanup_temp_dir, validate_filename
 
 
 class CodeExecutor:
-    """代码执行器，负责在Docker容器中安全执行Python代码"""
+    """Conda代码执行器，负责在Conda虚拟环境中安全执行Python代码"""
     
     def __init__(self):
-        """初始化Docker客户端"""
+        """初始化Conda执行器"""
+        self._check_conda_available()
+        print("✅ Conda执行器初始化成功")
+    
+    def _check_conda_available(self):
+        """检查conda是否可用"""
         try:
-            self.docker_client = docker.from_env()
-            # 测试Docker连接
-            self.docker_client.ping()
-            print("✅ Docker连接成功")
-        except Exception as e:
-            print(f"❌ Docker连接失败: {e}")
-            raise RuntimeError(f"无法连接到Docker: {e}")
+            subprocess.run(
+                ["conda", "--version"], 
+                capture_output=True, 
+                check=True
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise RuntimeError("Conda不可用，请确保已正确安装conda")
     
     async def execute(
         self, 
@@ -35,7 +40,7 @@ class CodeExecutor:
         environment: Optional[str] = None
     ) -> ExecuteResponse:
         """
-        执行Python代码
+        在Conda环境中执行Python代码
         
         Args:
             code: 要执行的Python代码
@@ -62,8 +67,8 @@ class CodeExecutor:
             with open(code_file, "w", encoding="utf-8") as f:
                 f.write(code)
             
-            # 在Docker容器中执行代码
-            result = await self._run_in_container(temp_dir, timeout, environment)
+            # 在Conda环境中执行代码
+            result = await self._run_in_conda_env(temp_dir, timeout, environment)
             
             # 收集输出文件
             output_files = await self._collect_output_files(temp_dir)
@@ -117,39 +122,32 @@ class CodeExecutor:
             except Exception as e:
                 raise ValueError(f"处理文件 {filename} 时出错: {str(e)}")
     
-    async def _run_in_container(self, temp_dir: str, timeout: int, environment: Optional[str] = None) -> Dict:
-        """在Docker容器中运行代码"""
+    async def _run_in_conda_env(self, temp_dir: str, timeout: int, environment: Optional[str] = None) -> Dict:
+        """在Conda环境中运行代码"""
         try:
-            # 确定要使用的Docker镜像
-            docker_image = settings.DOCKER_IMAGE
+            # 确定要使用的Python可执行文件
+            python_executable = sys.executable  # 默认使用当前Python
+            
             if environment:
                 from .environment_manager import environment_manager
-                custom_image = environment_manager.get_environment_image(environment)
-                if custom_image:
-                    docker_image = custom_image
+                env_info = environment_manager.get_environment_info(environment)
+                if env_info and "python_executable" in env_info:
+                    python_executable = env_info["python_executable"]
                     # 更新最后使用时间
                     environment_manager.update_last_used(environment)
                 else:
                     raise ValueError(f"环境 '{environment}' 不存在或未就绪")
             
-            # 容器配置
-            container_config = {
-                "image": docker_image,
-                "command": ["python", "/sandbox/main.py"],
-                "working_dir": "/sandbox",
-                "volumes": {temp_dir: {"bind": "/sandbox", "mode": "rw"}},
-                "mem_limit": settings.MEMORY_LIMIT,
-                "cpu_quota": int(float(settings.CPU_LIMIT) * 100000),
-                "cpu_period": 100000,
-                "network_mode": settings.NETWORK_MODE,
-            }
+            # 构建执行命令
+            cmd = [python_executable, "main.py"]
             
-            # 运行容器
+            # 运行代码
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
                 None, 
-                self._run_container_sync, 
-                container_config, 
+                self._run_python_sync, 
+                cmd,
+                temp_dir,
                 timeout
             )
             
@@ -160,81 +158,135 @@ class CodeExecutor:
                 "success": False,
                 "stdout": "",
                 "stderr": str(e),
-                "error": f"容器执行错误: {str(e)}"
+                "error": f"环境执行错误: {str(e)}"
             }
     
-    def _run_container_sync(self, config: Dict, timeout: int) -> Dict:
-        """同步方式运行容器 - 使用简化的方法避免SDK问题"""
-        import subprocess
-        import json
-        
+    def _run_python_sync(self, cmd: list, work_dir: str, timeout: int) -> Dict:
+        """同步方式运行Python代码"""
         try:
-            # 获取volume mapping
-            volumes = config.get("volumes", {})
-            volume_mount = ""
-            if volumes:
-                # volumes格式: {temp_dir: {"bind": "/sandbox", "mode": "rw"}}
-                for host_path, container_config in volumes.items():
-                    container_path = container_config.get("bind", "/sandbox")
-                    # 将容器内路径转换为宿主机路径
-                    # /app/data/temp/sandbox_xxx -> /tmp/sandbox-exec/sandbox_xxx
-                    if host_path.startswith("/app/data/temp/"):
-                        host_path = host_path.replace("/app/data/temp/", "/tmp/sandbox-exec/")
-                    volume_mount = f"{host_path}:{container_path}"
-                    break
+            # 设置环境变量
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+            env["PYTHONPATH"] = work_dir
             
-            # 构建docker run命令
-            cmd = [
-                "docker", "run", "--rm",
-                "--memory", config.get("mem_limit", "512m"),
-                "--cpus", str(float(config.get("cpu_quota", 100000)) / 100000),
-                "--network", config.get("network_mode", "bridge")
-            ]
+            # 在某些系统上设置资源限制
+            def preexec_fn():
+                try:
+                    # 设置进程组，便于终止
+                    if hasattr(os, 'setpgrp'):
+                        os.setpgrp()
+                    
+                    # 在Unix系统上设置资源限制
+                    if hasattr(os, 'setrlimit'):
+                        import resource
+                        
+                        # 限制CPU时间 (秒)
+                        if hasattr(resource, 'RLIMIT_CPU'):
+                            resource.setrlimit(resource.RLIMIT_CPU, (timeout + 5, timeout + 10))
+                        
+                        # 限制内存使用 (字节) - 默认512MB
+                        if hasattr(resource, 'RLIMIT_AS'):
+                            memory_limit = self._parse_memory_limit("512m")
+                            if memory_limit > 0:
+                                resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
+                        
+                        # 限制文件大小 - 默认10MB
+                        if hasattr(resource, 'RLIMIT_FSIZE'):
+                            max_file_size = 10 * 1024 * 1024  # 10MB
+                            resource.setrlimit(resource.RLIMIT_FSIZE, (max_file_size, max_file_size))
+                except Exception:
+                    # 如果设置失败，继续执行但不设置限制
+                    pass
             
-            if volume_mount:
-                cmd.extend(["-v", volume_mount])
+            # 在Windows上不能使用preexec_fn
+            if sys.platform == "win32":
+                preexec_fn = None
+            
+            # 为了调试，暂时禁用preexec_fn
+            preexec_fn = None # type: ignore
+            
+            # 执行命令（暂时不使用preexec_fn进行调试）
+            popen_kwargs = {
+                "cwd": work_dir,
+                "stdout": subprocess.PIPE,
+                "stderr": subprocess.PIPE,
+                "env": env,
+                "text": True,
+            }
+            
+            # 在非Windows系统上可以使用preexec_fn（暂时禁用用于调试）
+            # if sys.platform != "win32" and preexec_fn:
+            #     popen_kwargs["preexec_fn"] = preexec_fn
+            
+            process = subprocess.Popen(cmd, **popen_kwargs)
+            
+            try:
+                stdout, stderr = process.communicate(timeout=timeout)
                 
-            cmd.extend([
-                "-w", config.get("working_dir", "/sandbox"),
-                config["image"]
-            ] + config["command"])
-            
-            # 执行命令
-            result = subprocess.run(
-                cmd, 
-                capture_output=True, 
-                text=True, 
-                timeout=timeout
-            )
-            
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "stdout": result.stdout,
-                    "stderr": result.stderr,
-                }
-            else:
+                if process.returncode == 0:
+                    return {
+                        "success": True,
+                        "stdout": stdout,
+                        "stderr": stderr,
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "stdout": stdout,
+                        "stderr": stderr,
+                        "error": f"代码执行失败，退出码: {process.returncode}"
+                    }
+                    
+            except subprocess.TimeoutExpired:
+                # 超时处理
+                self._terminate_process(process)
                 return {
                     "success": False,
-                    "stdout": result.stdout,
-                    "stderr": result.stderr,
-                    "error": f"代码执行失败，退出码: {result.returncode}"
+                    "stdout": "",
+                    "stderr": "",
+                    "error": f"代码执行超时（{timeout}秒）"
                 }
                 
-        except subprocess.TimeoutExpired:
-            return {
-                "success": False,
-                "stdout": "",
-                "stderr": "",
-                "error": f"代码执行超时（{timeout}秒）"
-            }
         except Exception as e:
             return {
                 "success": False,
                 "stdout": "",
                 "stderr": str(e),
-                "error": f"容器运行错误: {str(e)}"
+                "error": f"执行错误: {str(e)}"
             }
+    
+    def _terminate_process(self, process):
+        """终止进程及其子进程"""
+        try:
+            if sys.platform == "win32":
+                # Windows
+                process.terminate()
+            else:
+                # Unix-like systems
+                try:
+                    # 尝试优雅地终止进程组
+                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                    process.wait(timeout=2)
+                except (subprocess.TimeoutExpired, ProcessLookupError):
+                    # 强制终止
+                    try:
+                        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+        except Exception as e:
+            print(f"终止进程时出错: {e}")
+    
+    def _parse_memory_limit(self, memory_str: str) -> int:
+        """解析内存限制字符串，返回字节数"""
+        try:
+            if memory_str.endswith('m') or memory_str.endswith('M'):
+                return int(memory_str[:-1]) * 1024 * 1024
+            elif memory_str.endswith('g') or memory_str.endswith('G'):
+                return int(memory_str[:-1]) * 1024 * 1024 * 1024
+            else:
+                return int(memory_str)
+        except:
+            return 512 * 1024 * 1024  # 默认512MB
     
     async def _collect_output_files(self, temp_dir: str) -> Dict[str, str]:
         """收集输出文件并转换为base64"""
@@ -262,3 +314,7 @@ class CodeExecutor:
             print(f"收集输出文件时出错: {e}")
         
         return output_files
+
+
+# 全局代码执行器实例
+code_executor = CodeExecutor()

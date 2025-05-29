@@ -1,33 +1,31 @@
 services:
-  sandbox-api:
-    build: .
-    # 你可以在这里修改外部端口
+  simplepysandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simplepysandbox
     ports:
       - "8000:8000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/sandbox-exec:/app/data/temp
     environment:
-      - SANDBOX_TIMEOUT=30
-      - MAX_TIMEOUT=300
-      - MAX_CODE_LENGTH=100000
-      - MAX_FILE_SIZE=10485760
-      - DOCKER_IMAGE=python:3.11-slim
-      - MEMORY_LIMIT=512m
-      - CPU_LIMIT=1
-    user: "0:0"
+      - EXECUTION_MODE=conda
+      - HOST=0.0.0.0
+      - PORT=8000
+      - PYTHONPATH=/app
+    volumes:
+      # 挂载数据目录以持久化环境数据
+      - ./data:/app/data
+      # 挂载日志目录（如果存在）
+      - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-
-networks:
-  default:
-    name: sandbox-network
-
-volumes:
-  sandbox-data:
-    driver: local
+      start_period: 10s
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'

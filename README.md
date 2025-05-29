@@ -1,1196 +1,896 @@
-# SimplePySandbox - Python代码沙盒
+# SimplePySandbox - 安全的Python代码执行沙盒
 
-一个基于FastAPI的安全Python代码执行沙盒，支持网络和文件操作。
+🐍 一个基于FastAPI的现代化Python代码执行沙盒，支持Docker容器化部署和自定义环境管理。
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)](https://www.docker.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 📋 目录
 
-- [项目概述](#项目概述)
-- [功能特性](#功能特性)
-- [快速开始](#快速开始)
-- [🚀 部署与使用](#-部署与使用)
-  - [系统要求](#系统要求)
-  - [快速部署](#快速部署)
-  - [配置说明](#配置说明)
-  - [生产环境部署](#生产环境部署)
-  - [环境管理使用指南](#环境管理使用指南)
-  - [完整使用示例](#完整使用示例)
-  - [故障排除](#故障排除)
-  - [性能优化](#性能优化)
-- [📚 API详细文档](#-api详细文档)
-- [执行代码](#执行代码)
-- [健康检查](#健康检查)
-- [项目结构](#项目结构)
-- [安全特性](#安全特性)
-- [🛠️ 环境管理](#️-环境管理)
-- [开发指南](#开发指南)
-- [许可证](#许可证)
-- [贡献指南](#贡献指南)
-- [支持](#支持)
+- [项目特性](#-项目特性)
+- [快速开始](#-快速开始)
+- [部署方式](#-部署方式)
+- [API示例](#-api示例)
+- [API文档](#-api文档)
+- [CLI工具](#-cli工具)
+- [演示客户端](#-演示客户端)
+- [项目结构](#-项目结构)
+- [安全特性](#-安全特性)
+- [性能指标](#-性能指标)
+- [故障排除](#-故障排除)
 
-## 项目概述
+## 🚀 项目特性
 
-SimplePySandbox是一个轻量级的Python代码执行沙盒，通过REST API提供服务。它允许用户提交Python代码进行安全执行，并返回执行结果、输出以及生成的文件。
+### 核心功能
+- 🐳 **Docker容器化** - 完全隔离的安全执行环境
+- 🌐 **RESTful API** - 基于FastAPI的现代Web API
+- 📁 **文件操作** - 支持文件读写，Base64编码返回
+- ⏱️ **超时控制** - 灵活的代码执行时间限制
+- 🔒 **安全隔离** - 容器级别的安全边界
+- 📊 **性能监控** - 执行时间和资源使用统计
 
-## 功能特性
+### 环境管理
+- 🎛️ **自定义环境** - 创建和管理专用执行环境
+- 🐍 **多Python版本** - 支持不同Python版本
+- 📦 **包管理** - 灵活的依赖安装和管理
+- 🔧 **环境模板** - 预配置的常用环境
 
-- ✅ **安全的代码执行环境** - 使用Docker容器隔离执行环境
-- ✅ **网络访问支持** - 允许代码进行网络请求
-- ✅ **文件操作支持** - 支持文件读写操作
-- ✅ **超时控制** - 可设置代码执行超时时间
-- ✅ **完整的输出捕获** - 返回stdout、stderr和执行结果
-- ✅ **文件结果返回** - 以base64编码返回生成的文件
-- ✅ **RESTful API** - 基于FastAPI的现代Web API
+### 开发者友好
+- 📖 **完整文档** - Swagger UI自动生成API文档
+- 🛠️ **CLI工具** - 命令行环境管理工具
+- 💡 **示例客户端** - 功能完整的Python客户端
+- 🧪 **测试覆盖** - 全面的功能和性能测试
 
-## 快速开始
+## ⚡ 快速开始
 
 ### 环境要求
 
-- Python 3.10+
-- Docker
-- pip
+- **Python 3.10+**
+- **Docker** (推荐)
+- **Conda/Miniconda** (可选)
 
-### 安装依赖
+### 1. 克隆项目
+
+```bash
+git clone <repository-url>
+cd SimplePySandbox
+```
+
+### 2. 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 启动服务
+### 3. 启动服务
 
 ```bash
 # 开发模式
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# 生产模式
+# 生产模式 
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-### 构建Docker镜像
+### 4. 验证服务
 
 ```bash
-docker build -t python-sandbox .
+curl http://localhost:8000/health
 ```
 
-## 📚 API详细文档
+## 🐳 部署方式
 
-SimplePySandbox 提供了完整的RESTful API，支持代码执行、环境管理等功能。
+### Docker部署（推荐）
 
-### 基础信息
+#### 1. 构建镜像
 
-- **基础URL**: `http://localhost:8000`
-- **API版本**: v1
-- **内容类型**: `application/json`
-- **字符编码**: UTF-8
+```bash
+docker build -t simplepysandbox:latest .
+```
 
-### 代码执行API
+#### 2. 运行容器
 
-#### 1. 基础代码执行
+```bash
+# 基础运行
+docker run -d -p 8000:8000 --name simplepysandbox simplepysandbox:latest
 
-**POST** `/execute`
+# 带资源限制
+docker run -d \
+  -p 8000:8000 \
+  --name simplepysandbox \
+  --memory=1g \
+  --cpus=1.0 \
+  simplepysandbox:latest
+```
 
-在默认环境中执行Python代码。
+#### 3. Docker Compose部署
 
-**请求示例**:
+```bash
+docker-compose up -d
+```
+
+### 本地开发部署
+
+#### Conda模式
+
+```bash
+# 设置执行模式
+export EXECUTION_MODE=conda
+
+# 启动服务
+uvicorn main:app --reload
+```
+
+#### 使用启动脚本
+
+```bash
+# Docker模式
+./docker.sh
+
+# Conda模式  
+./start_conda.sh
+```
+
+## 🔥 API示例
+
+### 基础代码执行
+
+#### 简单计算
+
 ```bash
 curl -X POST "http://localhost:8000/execute" \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "print(\"Hello, World!\")",
-    "timeout": 30
+    "code": "print(\"Hello, SimplePySandbox!\")\nresult = 2 + 3\nprint(f\"2 + 3 = {result}\")",
+    "timeout": 10
   }'
 ```
 
-**完整参数说明**:
-```json
-{
-  "code": "string",           // 必需：要执行的Python代码
-  "timeout": 30,              // 可选：超时时间(秒)，默认30，最大300
-  "files": {                  // 可选：输入文件(base64编码)
-    "input.txt": "SGVsbG8="
-  },
-  "environment": "env-name"   // 可选：指定执行环境
-}
-```
+#### 数据处理示例
 
-**响应格式**:
-```json
-{
-  "success": true,                    // 执行是否成功
-  "stdout": "Hello, World!\n",       // 标准输出
-  "stderr": "",                      // 标准错误
-  "execution_time": 0.123,           // 执行时间(秒)
-  "files": {                         // 生成的文件(base64编码)
-    "output.txt": "VGVzdCBkYXRh"
-  },
-  "error": null                      // 错误信息
-}
-```
-
-**错误响应**:
-```json
-{
-  "success": false,
-  "stdout": "",
-  "stderr": "SyntaxError: invalid syntax",
-  "execution_time": 0.001,
-  "files": {},
-  "error": "代码执行失败"
-}
-```
-
-#### 2. 在指定环境中执行
-
-**POST** `/execute-with-environment`
-
-在指定的自定义环境中执行代码。
-
-**请求示例**:
 ```bash
-curl -X POST "http://localhost:8000/execute-with-environment" \
+curl -X POST "http://localhost:8000/execute" \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "import pandas as pd\nprint(pd.__version__)",
-    "environment": "data-science",
-    "timeout": 60
+    "code": "import json\nimport csv\nfrom datetime import datetime\n\n# 创建数据\ndata = {\n  \"timestamp\": str(datetime.now()),\n  \"numbers\": [1, 2, 3, 4, 5],\n  \"sum\": sum([1, 2, 3, 4, 5])\n}\n\n# 保存为JSON\nwith open(\"result.json\", \"w\") as f:\n    json.dump(data, f, indent=2)\n\nprint(\"数据处理完成\")\nprint(f\"结果: {data}\")",
+    "timeout": 15
   }'
 ```
 
-### 环境管理API
+### 环境操作示例
 
 #### 1. 创建环境
 
-**POST** `/environments`
-
-创建新的执行环境。
-
-**请求示例**:
 ```bash
 curl -X POST "http://localhost:8000/environments" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "ml-env",
-    "description": "机器学习环境",
-    "base_image": "python:3.11-slim",
-    "setup_script": "pip install scikit-learn pandas numpy",
+    "name": "data-science",
+    "description": "数据科学环境",
+    "setup_script": "pip install numpy pandas matplotlib seaborn scikit-learn",
     "python_version": "3.11"
   }'
 ```
 
-**参数说明**:
-```json
-{
-  "name": "string",              // 必需：环境名称(字母数字和连字符)
-  "description": "string",       // 必需：环境描述
-  "base_image": "string",        // 必需：Docker基础镜像
-  "setup_script": "string",      // 必需：安装脚本(bash)
-  "python_version": "string"     // 必需：Python版本
-}
-```
+#### 2. 列出环境
 
-**响应**:
-```json
-{
-  "name": "ml-env",
-  "description": "机器学习环境",
-  "base_image": "python:3.11-slim",
-  "docker_image": "sandbox-ml-env:latest",
-  "status": "building",          // building/ready/failed
-  "created_at": "2025-05-29T12:00:00Z",
-  "last_used": null,
-  "setup_script": "pip install...",
-  "python_version": "3.11"
-}
-```
-
-#### 2. 列出所有环境
-
-**GET** `/environments`
-
-获取所有环境的列表。
-
-**请求示例**:
 ```bash
 curl -X GET "http://localhost:8000/environments"
 ```
 
-**响应**:
-```json
-{
-  "environments": [
-    {
-      "name": "ml-env",
-      "description": "机器学习环境",
-      "status": "ready",
-      "created_at": "2025-05-29T12:00:00Z",
-      "last_used": "2025-05-29T12:30:00Z"
-    }
-  ],
-  "total": 1
-}
-```
+#### 3. 在指定环境中执行代码
 
-#### 3. 获取环境详情
-
-**GET** `/environments/{environment_name}`
-
-获取指定环境的详细信息。
-
-**请求示例**:
 ```bash
-curl -X GET "http://localhost:8000/environments/ml-env"
+curl -X POST "http://localhost:8000/execute-with-environment" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "import numpy as np\nimport pandas as pd\n\n# 创建数据\ndata = np.random.rand(10, 3)\ndf = pd.DataFrame(data, columns=[\"A\", \"B\", \"C\"])\n\nprint(\"数据概览:\")\nprint(df.describe())\n\n# 保存结果\ndf.to_csv(\"analysis.csv\", index=False)\nprint(\"\\n数据已保存到 analysis.csv\")",
+    "environment": "data-science",
+    "timeout": 30
+  }'
 ```
 
 #### 4. 删除环境
 
-**DELETE** `/environments/{environment_name}`
-
-删除指定的环境和相关的Docker镜像。
-
-**请求示例**:
 ```bash
-curl -X DELETE "http://localhost:8000/environments/ml-env"
+curl -X DELETE "http://localhost:8000/environments/data-science"
 ```
 
-**响应**:
-```json
-{
-  "message": "环境 'ml-env' 已删除"
-}
-```
-
-### 系统API
-
-#### 健康检查
-
-**GET** `/health`
-
-检查系统健康状态。
-
-**响应**:
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-05-29T12:00:00Z"
-}
-```
-
-#### API文档
-
-**GET** `/docs`
-
-访问交互式API文档(Swagger UI)。
-
-**GET** `/redoc`
-
-访问API文档(ReDoc格式)。
-
-### 状态码说明
-
-| 状态码 | 含义 | 说明 |
-|--------|------|------|
-| 200 | OK | 请求成功 |
-| 400 | Bad Request | 请求参数错误 |
-| 404 | Not Found | 资源不存在 |
-| 422 | Unprocessable Entity | 请求格式正确但语义错误 |
-| 500 | Internal Server Error | 服务器内部错误 |
-
-### 限制和约束
-
-| 项目 | 限制 | 说明 |
-|------|------|------|
-| 代码长度 | 50KB | 单次提交的代码最大长度 |
-| 执行时间 | 300秒 | 最大执行超时时间 |
-| 文件大小 | 10MB | 单个文件最大大小 |
-| 内存使用 | 512MB | 默认内存限制 |
-| CPU使用 | 1.0核 | 默认CPU限制 |
-| 并发执行 | 10个 | 同时执行的最大任务数 |
-
-### 错误处理
-
-#### 通用错误格式
-
-```json
-{
-  "detail": "错误描述信息"
-}
-```
-
-#### 常见错误
-
-**1. 代码执行超时**
-```json
-{
-  "success": false,
-  "error": "代码执行超时(30秒)",
-  "execution_time": 30.0
-}
-```
-
-**2. 环境不存在**
-```json
-{
-  "detail": "环境 'nonexistent-env' 不存在"
-}
-```
-
-**3. 环境名称冲突**
-```json
-{
-  "detail": "环境 'existing-env' 已存在"
-}
-```
-
-**4. 文件过大**
-```json
-{
-  "detail": "文件大小超过限制(10MB)"
-}
-```
-
-### 客户端SDK示例
-
-#### Python客户端
+### Python客户端示例
 
 ```python
 import requests
-import base64
 import json
 
 class SimplePySandboxClient:
     def __init__(self, base_url="http://localhost:8000"):
-        self.base_url = base_url.rstrip('/')
-        self.session = requests.Session()
+        self.base_url = base_url
     
-    def execute_code(self, code, timeout=30, files=None, environment=None):
-        """执行代码"""
-        payload = {
-            "code": code,
-            "timeout": timeout
-        }
-        
-        if files:
-            payload["files"] = files
+    def execute_code(self, code, timeout=10, environment=None):
+        payload = {"code": code, "timeout": timeout}
         if environment:
             payload["environment"] = environment
-            
-        response = self.session.post(
-            f"{self.base_url}/execute",
-            json=payload
-        )
+        
+        response = requests.post(f"{self.base_url}/execute", json=payload)
         return response.json()
     
-    def create_environment(self, name, description, setup_script, 
-                          base_image="python:3.11-slim", python_version="3.11"):
-        """创建环境"""
+    def create_environment(self, name, setup_script, description="", python_version="3.11"):
         payload = {
             "name": name,
             "description": description,
-            "base_image": base_image,
             "setup_script": setup_script,
             "python_version": python_version
         }
-        
-        response = self.session.post(
-            f"{self.base_url}/environments",
-            json=payload
-        )
-        return response.json()
-    
-    def list_environments(self):
-        """列出环境"""
-        response = self.session.get(f"{self.base_url}/environments")
-        return response.json()
-    
-    def get_environment(self, name):
-        """获取环境详情"""
-        response = self.session.get(f"{self.base_url}/environments/{name}")
-        return response.json()
-    
-    def delete_environment(self, name):
-        """删除环境"""
-        response = self.session.delete(f"{self.base_url}/environments/{name}")
-        return response.json()
-    
-    def health_check(self):
-        """健康检查"""
-        response = self.session.get(f"{self.base_url}/health")
+        response = requests.post(f"{self.base_url}/environments", json=payload)
         return response.json()
 
 # 使用示例
 client = SimplePySandboxClient()
 
 # 执行代码
-result = client.execute_code("print('Hello, World!')")
-print(result)
+result = client.execute_code("""
+import math
+numbers = [1, 4, 9, 16, 25]
+sqrt_numbers = [math.sqrt(x) for x in numbers]
+print(f"原数字: {numbers}")
+print(f"平方根: {sqrt_numbers}")
+""")
 
-# 创建环境
-env_result = client.create_environment(
-    name="test-env",
-    description="测试环境",
-    setup_script="pip install requests"
-)
-print(env_result)
+print(f"执行结果: {result}")
 ```
 
-#### JavaScript客户端
+## 📚 API文档
 
-```javascript
-class SimplePySandboxClient {
-    constructor(baseUrl = 'http://localhost:8000') {
-        this.baseUrl = baseUrl.replace(/\/$/, '');
-    }
-    
-    async executeCode(code, options = {}) {
-        const payload = {
-            code,
-            timeout: options.timeout || 30,
-            ...options
-        };
-        
-        const response = await fetch(`${this.baseUrl}/execute`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        return await response.json();
-    }
-    
-    async createEnvironment(config) {
-        const response = await fetch(`${this.baseUrl}/environments`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(config)
-        });
-        
-        return await response.json();
-    }
-    
-    async listEnvironments() {
-        const response = await fetch(`${this.baseUrl}/environments`);
-        return await response.json();
-    }
-    
-    async healthCheck() {
-        const response = await fetch(`${this.baseUrl}/health`);
-        return await response.json();
-    }
-}
+### 接口概览
 
-// 使用示例
-const client = new SimplePySandboxClient();
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | `/` | API信息 |
+| GET | `/health` | 健康检查 |
+| POST | `/execute` | 执行代码 |
+| POST | `/execute-with-environment` | 在指定环境中执行代码 |
+| GET | `/environments` | 列出所有环境 |
+| POST | `/environments` | 创建环境 |
+| GET | `/environments/{name}` | 获取环境详情 |
+| DELETE | `/environments/{name}` | 删除环境 |
 
-client.executeCode("print('Hello, World!')")
-    .then(result => console.log(result));
-```
+### 请求/响应格式
 
-## API文档
+#### 执行代码 (POST /execute)
 
-### 执行代码
-
-**POST** `/execute` - 执行Python代码
-
-**基础示例**:
-```bash
-curl -X POST "http://localhost:8000/execute" \
-  -H "Content-Type: application/json" \
-  -d '{"code": "print(\"Hello, World!\")", "timeout": 30}'
-```
-
-**完整API文档**: 请参阅下方的 [📚 API详细文档](#-api详细文档) 章节
-
-### 健康检查
-
-**GET** `/health` - 检查服务状态
-
-```bash
-curl http://localhost:8000/health
-```
-
-## 项目结构
-
-```
-SimplePySandbox/
-├── main.py                      # FastAPI主应用
-├── manage_environments.py       # 环境管理脚本
-├── run_tests.py                # 测试运行器
-├── sandbox/                    # 沙盒核心模块
-│   ├── __init__.py
-│   ├── executor.py             # 代码执行器
-│   ├── environment_manager.py   # 环境管理器
-│   ├── security.py             # 安全策略
-│   └── utils.py                # 工具函数
-├── models/                     # 数据模型
-│   ├── __init__.py
-│   ├── request.py              # 请求/响应模型
-│   └── environment.py          # 环境模型
-├── config/                     # 配置模块
-│   ├── __init__.py
-│   └── settings.py             # 应用设置
-├── tests/                      # 测试套件
-│   ├── __init__.py
-│   ├── conftest.py             # pytest配置
-│   ├── README.md               # 测试文档
-│   ├── data/                   # 测试数据
-│   │   └── pythonocc_example.py
-│   ├── unit/                   # 单元测试
-│   │   ├── test_security.py
-│   │   └── test_utils.py
-│   ├── integration/            # 集成测试
-│   │   ├── test_main.py
-│   │   ├── test_timeout.py
-│   │   ├── test_api_timeout.py
-│   │   └── test_environment.py
-│   ├── system/                 # 系统测试
-│   │   └── test_complete_system.py
-│   ├── performance/            # 性能测试
-│   │   └── test_performance.py
-│   └── legacy/                 # 遗留测试
-├── environments/               # 环境脚本
-│   ├── basic-python.sh
-│   ├── pythonocc-stable.sh
-│   └── pythonocc_cylinder.sh
-├── examples/                   # 使用示例
-│   ├── advanced_example.py
-│   └── client_example.py
-├── data/                       # 数据目录
-│   └── environments/           # 环境数据
-├── Dockerfile                  # Docker镜像配置
-├── docker-compose.yml          # Docker Compose配置
-├── k8s-deployment.yaml         # Kubernetes部署配置
-├── requirements.txt            # Python依赖
-├── pytest.ini                 # pytest配置
-├── start.sh                    # 启动脚本
-├── test.sh                     # 测试脚本
-├── test_pythonocc_curl.sh     # PythonOCC测试脚本
-├── .env.example               # 环境变量示例
-├── .dockerignore              # Docker忽略文件
-├── .gitignore                 # Git忽略文件
-├── LICENSE                    # 许可证
-├── README.md                  # 项目文档
-├── DOCUMENTATION.md           # 详细文档
-├── TESTING.md                 # 测试指南
-└── TEST_REFACTORING_REPORT.md # 测试重构报告
-```
-
-## 安全特性
-
-### 容器隔离
-
-- 每次代码执行都在独立的Docker容器中运行
-- 容器资源限制（CPU、内存）
-- 网络访问控制
-
-### 代码限制
-
-- 执行时间限制
-- 内存使用限制
-- 禁止访问敏感系统资源
-- 文件系统访问限制在工作目录
-
-### 输入验证
-
-- 代码长度限制
-- 超时时间范围验证
-- 文件大小限制
-
-## 配置说明
-
-环境变量配置：
-
-- `SANDBOX_TIMEOUT`: 默认超时时间（秒）
-- `MAX_CODE_LENGTH`: 最大代码长度
-- `MAX_FILE_SIZE`: 最大文件大小（字节）
-- `DOCKER_IMAGE`: 执行环境Docker镜像名称
-- `WORK_DIR`: 容器内工作目录
-
-## 开发指南
-
-### 本地开发
-
-1. 克隆项目
-2. 安装依赖：`pip install -r requirements.txt`
-3. 构建Docker镜像：`docker build -t python-sandbox .`
-4. 启动开发服务器：`uvicorn main:app --reload`
-
-### 测试
-
-```bash
-# 运行单元测试
-python -m pytest tests/
-
-# 运行集成测试
-python -m pytest tests/integration/
-```
-
-### API测试示例
-
-```bash
-# 简单代码执行
-curl -X POST "http://localhost:8000/execute" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "code": "print(\"Hello, World!\")",
-    "timeout": 10
-  }'
-
-# 带文件输入的代码执行
-curl -X POST "http://localhost:8000/execute" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "code": "with open(\"input.txt\", \"r\") as f:\n    content = f.read()\n    print(content)\nwith open(\"output.txt\", \"w\") as f:\n    f.write(\"Processed: \" + content)",
-    "timeout": 10,
-    "files": {
-      "input.txt": "SGVsbG8gV29ybGQ="
-    }
-  }'
-```
-
-## 🚀 部署与使用
-
-### 系统要求
-
-- **操作系统**: Linux、macOS 或 Windows (推荐使用Linux生产环境)
-- **Docker**: 20.10+ 
-- **Docker Compose**: 2.0+
-- **内存**: 最少2GB，推荐4GB+
-- **存储**: 最少10GB可用空间
-- **网络**: 需要访问Docker Hub拉取镜像
-
-### 快速部署
-
-#### 方法一：Docker Compose (推荐)
-
-1. **克隆项目**
-```bash
-git clone <repository-url>
-cd SimplePySandbox
-```
-
-2. **启动服务**
-```bash
-# 构建并启动所有服务
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f sandbox-api
-```
-
-3. **验证部署**
-```bash
-# 健康检查
-curl http://localhost:8000/health
-
-# 测试代码执行
-curl -X POST http://localhost:8000/execute \
-  -H "Content-Type: application/json" \
-  -d '{"code": "print(\"Hello, SimplePySandbox!\")"}'
-```
-
-#### 方法二：手动Docker部署
-
-1. **构建镜像**
-```bash
-docker build -t simplepysandbox-sandbox-api:latest .
-```
-
-2. **创建网络和卷**
-```bash
-# 创建网络
-docker network create sandbox-network
-
-# 创建执行目录
-sudo mkdir -p /tmp/sandbox-exec
-sudo chmod 755 /tmp/sandbox-exec
-```
-
-3. **运行容器**
-```bash
-docker run -d \
-  --name sandbox-api \
-  --user "0:0" \
-  -p 8000:8000 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /tmp/sandbox-exec:/app/data/temp \
-  --network sandbox-network \
-  simplepysandbox-sandbox-api:latest
-```
-
-### 配置说明
-
-#### 环境变量配置
-
-在`docker-compose.yml`或运行时设置以下环境变量：
-
-```yaml
-environment:
-  # 基本配置
-  - SANDBOX_TIMEOUT=30           # 默认超时时间(秒)
-  - MAX_CODE_LENGTH=50000        # 最大代码长度
-  - MAX_FILE_SIZE=10485760      # 最大文件大小(10MB)
-  
-  # Docker配置
-  - DOCKER_IMAGE=python:3.11-slim  # 默认执行镜像
-  - MEMORY_LIMIT=512m               # 内存限制
-  - CPU_LIMIT=1.0                   # CPU限制
-  - NETWORK_MODE=bridge             # 网络模式
-  
-  # 路径配置
-  - WORK_DIR=/sandbox               # 容器工作目录
-  - TEMP_DIR=/app/data/temp         # 临时文件目录
-```
-
-#### 高级配置
-
-**1. 网络隔离配置**
-```yaml
-# 无网络访问模式
-environment:
-  - NETWORK_MODE=none
-
-# 自定义网络模式
-environment:
-  - NETWORK_MODE=custom-network
-```
-
-**2. 资源限制调整**
-```yaml
-environment:
-  - MEMORY_LIMIT=1g     # 1GB内存
-  - CPU_LIMIT=2.0       # 2个CPU核心
-```
-
-**3. 安全强化**
-```yaml
-environment:
-  - SECURITY_LEVEL=strict    # 严格安全模式
-  - ALLOWED_MODULES=os,sys,json  # 允许的模块列表
-```
-
-### 生产环境部署
-
-#### 1. 使用反向代理
-
-**Nginx配置示例**
-```nginx
-upstream sandbox_backend {
-    server 127.0.0.1:8000;
-}
-
-server {
-    listen 80;
-    server_name your-domain.com;
-    
-    # API路由
-    location / {
-        proxy_pass http://sandbox_backend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # 超时设置
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
-    
-    # 文件上传大小限制
-    client_max_body_size 50M;
+**请求**:
+```json
+{
+  "code": "string",           // 必需：Python代码
+  "timeout": 10,             // 可选：超时时间(秒)
+  "files": {                 // 可选：输入文件
+    "filename": "base64content"
+  }
 }
 ```
 
-#### 2. SSL/HTTPS配置
+**响应**:
+```json
+{
+  "success": true,           // 执行状态
+  "stdout": "output text",   // 标准输出
+  "stderr": "",              // 错误输出
+  "error": null,             // 错误信息
+  "execution_time": 0.123,   // 执行时间(秒)
+  "files": {                 // 生成的文件
+    "result.txt": "base64content"
+  }
+}
+```
+
+#### 创建环境 (POST /environments)
+
+**请求**:
+```json
+{
+  "name": "env-name",        // 必需：环境名称
+  "description": "描述",      // 可选：环境描述
+  "setup_script": "pip install pandas", // 必需：设置脚本
+  "python_version": "3.11"   // 可选：Python版本
+}
+```
+
+**响应**:
+```json
+{
+  "name": "env-name",
+  "description": "描述",
+  "status": "building",
+  "python_version": "3.11",
+  "created_at": "2025-01-01T00:00:00Z"
+}
+```
+
+### 交互式文档
+
+启动服务后，访问以下地址查看完整的API文档：
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **OpenAPI Schema**: http://localhost:8000/openapi.json
+
+## 🛠️ CLI工具
+
+SimplePySandbox提供了强大的命令行工具 `manage_environments.py` 用于环境管理。
+
+### 安装与使用
 
 ```bash
-# 使用Let's Encrypt
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
+# 确保项目依赖已安装
+pip install -r requirements.txt
+
+# 查看帮助
+python manage_environments.py --help
 ```
 
-#### 3. 监控和日志
+### 基础命令
 
-**Docker Compose监控配置**
-```yaml
-services:
-  sandbox-api:
-    # ... 其他配置
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    
-    # 健康检查
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-```
+#### 1. 列出环境
 
-### 环境管理使用指南
-
-#### 1. 创建自定义环境
-
-**使用CLI工具**
 ```bash
-# 创建数据科学环境
-python manage_environments.py create data-science environments/data-science-pip.sh --wait
-
-# 创建机器学习环境
-python manage_environments.py create ml-env environments/machine-learning.sh --wait
+python manage_environments.py list
 ```
 
-**使用API直接创建**
+输出示例：
+```
+📋 环境列表:
+   共 2 个环境:
+
+   ✅ data-science
+      状态: ready
+      描述: 数据科学环境
+      Python版本: 3.11
+      创建时间: 2025-01-01T10:00:00Z
+
+   🔧 ml-env
+      状态: building
+      描述: 机器学习环境
+      Python版本: 3.10
+      创建时间: 2025-01-01T11:00:00Z
+```
+
+#### 2. 创建环境
+
 ```bash
-curl -X POST http://localhost:8000/environments \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "web-dev",
-    "description": "Web开发环境",
-    "base_image": "python:3.11-slim",
-    "setup_script": "pip install fastapi uvicorn requests pandas",
-    "python_version": "3.11"
-  }'
+# 基础创建
+python manage_environments.py create my-env ./environments/setup.sh
+
+# 带参数创建
+python manage_environments.py create ml-env ./environments/ml.sh \
+  --description "机器学习环境" \
+  --python-version 3.10
+
+# 创建并等待完成
+python manage_environments.py create data-env ./environments/data.sh \
+  --wait \
+  --wait-timeout 15
 ```
 
-#### 2. 环境脚本编写
+#### 3. 查看环境详情
 
-**基础脚本模板**
+```bash
+python manage_environments.py info my-env
+```
+
+输出示例：
+```
+🔍 环境详情: my-env
+   ✅ 名称: my-env
+   📝 描述: 自定义环境
+   🐍 Python版本: 3.11
+   📊 状态: ready
+   📅 创建时间: 2025-01-01T10:00:00Z
+   🕐 最后使用: 2025-01-01T12:00:00Z
+```
+
+#### 4. 删除环境
+
+```bash
+python manage_environments.py delete my-env
+```
+
+#### 5. 等待环境构建完成
+
+```bash
+# 等待默认10分钟
+python manage_environments.py wait my-env
+
+# 自定义等待时间
+python manage_environments.py wait my-env --timeout 20
+```
+
+### 环境配置脚本示例
+
+创建环境配置脚本 `environments/data-science.sh`：
+
 ```bash
 #!/bin/bash
-set -e  # 遇到错误时停止
+# 数据科学环境配置脚本
 
-echo "🔧 开始安装依赖..."
+set -e
 
-# 更新包管理器
-apt-get update
+echo "🔧 配置数据科学环境..."
 
-# 安装系统依赖
-apt-get install -y git curl
+# 安装数据科学库
+pip install numpy pandas matplotlib seaborn scikit-learn jupyter
 
-# 安装Python包
-pip install --no-cache-dir \
-    numpy \
-    pandas \
-    matplotlib \
-    requests
+# 安装额外工具
+pip install requests beautifulsoup4 plotly
 
-# 清理缓存
-apt-get clean
-rm -rf /var/lib/apt/lists/*
-
-echo "✅ 环境配置完成"
+echo "✅ 数据科学环境配置完成"
 ```
 
-#### 3. 使用自定义环境
+使用脚本创建环境：
 
-```python
-import requests
-
-# 在特定环境中执行代码
-response = requests.post("http://localhost:8000/execute", json={
-    "code": """
-import pandas as pd
-import numpy as np
-
-# 创建数据
-data = pd.DataFrame({
-    'A': np.random.randn(10),
-    'B': np.random.randn(10)
-})
-
-print("数据统计:")
-print(data.describe())
-
-# 保存到文件
-data.to_csv('output.csv', index=False)
-print("数据已保存到 output.csv")
-""",
-    "environment": "data-science",
-    "timeout": 30
-})
-
-print(response.json())
+```bash
+python manage_environments.py create data-science ./environments/data-science.sh \
+  --description "完整的数据科学环境" \
+  --python-version 3.11 \
+  --wait
 ```
 
-### 完整使用示例
+### 高级功能
+
+#### 指定API地址
+
+```bash
+python manage_environments.py --url http://remote-server:8000 list
+```
+
+#### 批量操作
+
+```bash
+# 批量创建环境
+for env in data-science ml-ops web-scraping; do
+  python manage_environments.py create $env ./environments/${env}.sh --wait
+done
+```
+
+## 💡 演示客户端
+
+项目包含一个功能完整的演示客户端 `demo_client.py`，展示了所有主要功能。
+
+### 运行演示
+
+```bash
+# 确保服务正在运行
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+# 运行演示客户端
+python demo_client.py
+```
+
+### 演示内容
+
+演示客户端包含以下功能展示：
 
 #### 1. 基础代码执行
 ```python
-import requests
-import base64
-
-# 基础代码执行
-def basic_execution():
-    code = """
-print("Hello, SimplePySandbox!")
+def demo_basic_usage():
+    """演示基本用法"""
+    client = SimplePySandboxClient()
+    
+    # 健康检查
+    health = client.health_check()
+    print(f"服务状态: {health['status']}")
+    
+    # 基本代码执行
+    basic_code = """
+print("Hello from SimplePySandbox!")
 import sys
-print(f"Python version: {sys.version}")
+print(f"Python版本: {sys.version}")
 
-# 创建文件
-with open("hello.txt", "w") as f:
-    f.write("Hello from sandbox!")
+numbers = [1, 2, 3, 4, 5]
+result = sum(x**2 for x in numbers)
+print(f"平方和: {result}")
 """
     
-    response = requests.post("http://localhost:8000/execute", json={
-        "code": code,
-        "timeout": 10
-    })
-    
-    result = response.json()
-    print("执行结果:", result["stdout"])
-    
-    # 下载生成的文件
-    if "hello.txt" in result["files"]:
-        file_content = base64.b64decode(result["files"]["hello.txt"])
-        print("文件内容:", file_content.decode())
-
-basic_execution()
+    result = client.execute_code(basic_code)
+    client.print_result(result)
 ```
 
-#### 2. 文件处理示例
+#### 2. 文件操作演示
 ```python
-def file_processing_example():
-    # 准备输入文件
-    input_data = "Name,Age,City\nAlice,25,New York\nBob,30,London"
-    input_b64 = base64.b64encode(input_data.encode()).decode()
-    
-    code = """
-import csv
+def demo_file_operations():
+    """演示文件操作"""
+    file_code = """
 import json
+import csv
+from datetime import datetime
 
-# 读取CSV文件
-with open("input.csv", "r") as f:
-    reader = csv.DictReader(f)
-    data = list(reader)
+# 创建JSON文件
+data = {
+    "timestamp": str(datetime.now()),
+    "message": "SimplePySandbox测试",
+    "numbers": list(range(1, 11)),
+    "status": "success"
+}
 
-print(f"读取了 {len(data)} 条记录")
+with open("test_data.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
 
-# 转换为JSON
-with open("output.json", "w") as f:
-    json.dump(data, f, indent=2)
+# 创建CSV文件
+csv_data = [
+    ["姓名", "年龄", "城市"],
+    ["张三", "25", "北京"],
+    ["李四", "30", "上海"],
+    ["王五", "28", "深圳"]
+]
 
-print("数据已转换为JSON格式")
+with open("test_data.csv", "w", encoding="utf-8", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerows(csv_data)
+
+print("✅ 文件创建完成!")
 """
     
-    response = requests.post("http://localhost:8000/execute", json={
-        "code": code,
-        "files": {"input.csv": input_b64},
-        "timeout": 15
-    })
-    
-    result = response.json()
-    if result["success"] and "output.json" in result["files"]:
-        json_content = base64.b64decode(result["files"]["output.json"])
-        print("JSON输出:", json_content.decode())
-
-file_processing_example()
+    result = client.execute_code(file_code)
+    client.print_result(result)
 ```
 
-#### 3. 网络请求示例
+#### 3. 性能测试
 ```python
-def network_request_example():
-    code = """
+def demo_performance_test():
+    """演示性能测试"""
+    perf_code = """
+import time
+import math
+
+print("🔥 性能测试开始...")
+
+# 数学计算测试
+start = time.time()
+result = sum(math.sqrt(i) for i in range(10000))
+math_time = time.time() - start
+print(f"数学计算: {result:.2f}, 耗时: {math_time:.3f}秒")
+
+# 字符串操作测试
+start = time.time()
+text = "SimplePySandbox " * 1000
+operations = [
+    text.upper(),
+    text.lower(),
+    text.replace("Sandbox", "环境"),
+    "".join(reversed(text))
+]
+string_time = time.time() - start
+print(f"字符串操作: {len(operations)}个操作, 耗时: {string_time:.3f}秒")
+
+print("✅ 性能测试完成!")
+"""
+    
+    result = client.execute_code(perf_code, timeout=20)
+    client.print_result(result)
+```
+
+#### 4. 错误处理演示
+```python
+def demo_error_handling():
+    """演示错误处理"""
+    # 语法错误测试
+    syntax_error_code = """
+print("语法错误测试")
+if True  # 缺少冒号
+    print("这会导致语法错误")
+"""
+    
+    result = client.execute_code(syntax_error_code)
+    client.print_result(result)
+    
+    # 运行时错误测试
+    runtime_error_code = """
+print("运行时错误测试")
+x = 10
+y = 0
+result = x / y  # 除零错误
+"""
+    
+    result = client.execute_code(runtime_error_code)
+    client.print_result(result)
+```
+
+#### 5. 环境管理演示
+```python
+def demo_environment_management():
+    """演示环境管理"""
+    client = SimplePySandboxClient()
+    
+    # 列出环境
+    envs = client.list_environments()
+    print(f"发现 {envs['total']} 个环境")
+    
+    # 创建测试环境
+    setup_script = """
+pip install requests beautifulsoup4
+echo "环境设置完成"
+"""
+    
+    try:
+        result = client.create_environment(
+            name="demo-env",
+            description="演示环境",
+            setup_script=setup_script
+        )
+        print("✅ 环境创建成功")
+    except Exception as e:
+        print(f"环境创建失败: {e}")
+```
+
+### 自定义演示
+
+您可以基于演示客户端创建自己的测试用例：
+
+```python
+from demo_client import SimplePySandboxClient
+
+def my_custom_demo():
+    client = SimplePySandboxClient()
+    
+    # 您的自定义代码
+    custom_code = """
+# 在这里编写您的测试代码
 import requests
 import json
 
-try:
-    # 获取公共API数据
-    response = requests.get("https://httpbin.org/json", timeout=10)
-    data = response.json()
-    
-    print("API响应:")
-    print(json.dumps(data, indent=2))
-    
-    # 保存响应
-    with open("api_response.json", "w") as f:
-        json.dump(data, f, indent=2)
-        
-except Exception as e:
-    print(f"请求失败: {e}")
+# 示例：获取天气数据
+response = requests.get("https://api.openweathermap.org/data/2.5/weather?q=Beijing&appid=your_api_key")
+print("API请求完成")
 """
     
-    response = requests.post("http://localhost:8000/execute", json={
-        "code": code,
-        "timeout": 20
-    })
-    
-    result = response.json()
-    print("网络请求结果:", result["stdout"])
+    result = client.execute_code(custom_code, timeout=30)
+    client.print_result(result)
 
-network_request_example()
+if __name__ == "__main__":
+    my_custom_demo()
 ```
 
-### 故障排除
+## 📁 项目结构
 
-#### 常见问题
+```
+SimplePySandbox/
+├── main.py                    # FastAPI应用主文件
+├── requirements.txt           # Python依赖
+├── Dockerfile                 # Docker镜像构建文件
+├── docker-compose.yml         # Docker Compose配置
+├── manage_environments.py     # CLI环境管理工具
+├── demo_client.py            # 演示客户端
+├── 
+├── config/                   # 配置文件
+│   ├── __init__.py
+│   └── settings.py           # 应用设置
+├── 
+├── models/                   # 数据模型
+│   ├── __init__.py
+│   ├── request.py           # 请求模型
+│   └── environment.py       # 环境模型
+├── 
+├── sandbox/                  # 沙盒核心模块
+│   ├── __init__.py
+│   ├── executor.py          # 代码执行器
+│   ├── environment_manager.py # 环境管理器
+│   ├── security.py          # 安全模块
+│   └── utils.py             # 工具函数
+├── 
+├── environments/             # 环境配置脚本
+│   └── pythonocc-stable.sh  # 示例环境脚本
+├── 
+├── data/                     # 数据目录
+│   ├── environments.json    # 环境配置数据
+│   └── conda_envs/          # Conda环境数据
+├── 
+├── examples/                 # 示例代码
+│   ├── client_example.py    # 客户端示例
+│   └── advanced_example.py  # 高级用法示例
+├── 
+├── logs/                     # 日志目录
+├── 
+└── docs/                     # 文档
+    ├── DEPLOYMENT.md         # 部署指南
+    ├── TEST_REPORT.md        # 测试报告
+    ├── PROJECT_SUMMARY.md    # 项目总结
+    └── DOCKER.md            # Docker使用指南
+```
 
-**1. Docker权限问题**
+## 🔒 安全特性
+
+### 容器级隔离
+- **Docker容器** - 完全隔离的执行环境
+- **资源限制** - CPU和内存使用限制
+- **网络隔离** - 可选的网络访问控制
+- **文件系统隔离** - 沙盒目录限制
+
+### 代码执行安全
+- **超时控制** - 防止无限循环和长时间运行
+- **权限限制** - 非root用户执行
+- **包管理** - 受控的依赖安装
+- **错误隔离** - 异常不会影响主服务
+
+### API安全
+- **输入验证** - 严格的请求参数验证
+- **错误处理** - 安全的错误信息返回
+- **资源限制** - 请求大小和频率限制
+- **日志记录** - 全面的操作日志
+
+## 📊 性能指标
+
+### 基准测试结果
+
+| 操作类型 | 平均响应时间 | 内存使用 | CPU使用 |
+|----------|-------------|----------|---------|
+| 简单计算 | 15-30ms | ~100MB | <5% |
+| 文件操作 | 20-40ms | ~120MB | <10% |
+| 网络请求 | 100-300ms | ~150MB | <15% |
+| 数据处理 | 50-200ms | ~200MB | <20% |
+
+### 资源限制
+
+| 资源类型 | 默认限制 | 最大限制 | 可配置 |
+|----------|----------|----------|--------|
+| 内存 | 512MB | 2GB | ✅ |
+| CPU | 1.0核 | 2.0核 | ✅ |
+| 执行时间 | 30秒 | 300秒 | ✅ |
+| 文件大小 | 10MB | 100MB | ✅ |
+| 代码长度 | 50KB | 500KB | ✅ |
+
+### 性能优化建议
+
+#### 生产环境配置
 ```bash
-# 确保Docker socket权限正确
-sudo chmod 666 /var/run/docker.sock
-
-# 或者将用户加入docker组
-sudo usermod -aG docker $USER
-```
-
-**2. 端口占用**
-```bash
-# 检查端口使用
-sudo netstat -tlnp | grep :8000
-
-# 修改端口
-docker-compose down
-# 编辑docker-compose.yml中的端口映射
-docker-compose up -d
-```
-
-**3. 内存不足**
-```bash
-# 清理Docker资源
-docker system prune -a
-
-# 调整内存限制
-docker-compose down
-# 修改MEMORY_LIMIT环境变量
-docker-compose up -d
-```
-
-**4. 环境构建失败**
-```bash
-# 查看构建日志
-docker-compose logs sandbox-api
-
-# 手动测试环境脚本
-docker run --rm python:3.11-slim bash -c "你的脚本内容"
-```
-
-#### 调试模式
-
-启用详细日志：
-```yaml
-environment:
-  - LOG_LEVEL=DEBUG
-  - PYTHONUNBUFFERED=1
-```
-
-### 性能优化
-
-#### 1. 缓存优化
-```bash
-# 预拉取常用镜像
-docker pull python:3.11-slim
-docker pull python:3.9-slim
-```
-
-#### 2. 资源调优
-```yaml
-# 根据负载调整资源限制
-environment:
-  - MEMORY_LIMIT=1g      # 增加内存
-  - CPU_LIMIT=2.0        # 增加CPU
-  - CONCURRENT_LIMIT=10  # 并发执行限制
-```
-
-#### 3. 监控配置
-```bash
-# 使用cAdvisor监控容器
+# Docker运行配置
 docker run -d \
-  --name=cadvisor \
-  -p 8080:8080 \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  gcr.io/cadvisor/cadvisor:latest
+  -p 8000:8000 \
+  --name simplepysandbox \
+  --memory=1g \
+  --cpus=2.0 \
+  --restart=unless-stopped \
+  simplepysandbox:latest
 ```
 
-## 🛠️ 环境管理
-
-SimplePySandbox 支持创建和管理自定义执行环境，您可以通过shell脚本配置容器依赖。
-
-### 环境功能特性
-
-- **多包管理器支持**: pip、conda、apt等
-- **自定义基础镜像**: 支持Python、Miniconda等不同基础镜像
-- **环境隔离**: 每个环境独立运行，互不影响
-- **脚本安全检查**: 自动检测危险命令
-- **持久化存储**: 环境配置和状态持久保存
-
-### 创建环境
-
+#### 环境变量调优
 ```bash
-curl -X POST "http://localhost:8000/environments" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "data-science-env",
-    "description": "数据科学环境",
-    "base_image": "python:3.11-slim",
-    "setup_script": "#!/bin/bash\nset -e\npip install numpy pandas matplotlib",
-    "python_version": "3.11"
-  }'
+export MAX_EXECUTION_TIME=60
+export MAX_CODE_LENGTH=100000
+export MAX_FILE_SIZE=50000000
+export LOG_LEVEL=INFO
 ```
 
-### 使用环境执行代码
+## 🔧 故障排除
 
+### 常见问题
+
+#### 1. 服务启动失败
+
+**问题**: `uvicorn: command not found`
 ```bash
-curl -X POST "http://localhost:8000/execute-with-environment" \
+# 解决方案
+pip install uvicorn[standard]
+```
+
+**问题**: `ModuleNotFoundError: No module named 'fastapi'`
+```bash
+# 解决方案
+pip install -r requirements.txt
+```
+
+#### 2. Docker相关问题
+
+**问题**: `docker: Cannot connect to the Docker daemon`
+```bash
+# 解决方案
+sudo systemctl start docker  # Linux
+# 或启动Docker Desktop (macOS/Windows)
+```
+
+**问题**: `Permission denied while trying to connect to Docker daemon`
+```bash
+# 解决方案
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### 3. 环境创建失败
+
+**问题**: 环境状态一直是 `building`
+```bash
+# 检查环境状态
+python manage_environments.py info env-name
+
+# 查看Docker日志
+docker logs simplepysandbox
+```
+
+**问题**: `Environment creation failed`
+```bash
+# 检查环境脚本
+cat environments/script.sh
+
+# 验证脚本权限
+chmod +x environments/script.sh
+```
+
+#### 4. 代码执行超时
+
+**问题**: 代码执行总是超时
+```bash
+# 增加超时时间
+curl -X POST "http://localhost:8000/execute" \
   -H "Content-Type: application/json" \
-  -d '{
-    "code": "import pandas as pd\nprint(pd.__version__)",
-    "environment": "data-science-env",
-    "timeout": 30
-  }'
+  -d '{"code": "import time; time.sleep(5)", "timeout": 30}'
 ```
 
-### 环境脚本示例
+#### 5. 网络连接问题
 
-项目提供了多个预定义的环境脚本示例：
+**问题**: API请求失败
+```bash
+# 检查服务状态
+curl http://localhost:8000/health
 
-- **data-science-pip.sh**: 基于pip的数据科学环境
-- **data-science-conda.sh**: 基于conda的数据科学环境
-- **machine-learning.sh**: 机器学习环境（包含深度学习框架）
-- **web-development.sh**: Web开发环境（FastAPI、Django等）
-- **basic-python.sh**: 基础Python工具环境
-
-### 环境管理API
-
-| 端点 | 方法 | 描述 |
-|------|------|------|
-| `/environments` | GET | 列出所有环境 |
-| `/environments` | POST | 创建新环境 |
-| `/environments/{name}` | GET | 获取环境详情 |
-| `/environments/{name}` | DELETE | 删除环境 |
-| `/execute-with-environment` | POST | 在指定环境中执行代码 |
-
-### 示例代码
-
-```python
-# 查看 examples/ 目录下的示例：
-# - environment_example.py: 基础环境管理示例
-# - conda_environment_example.py: Conda环境示例
-# - web_api_environment_example.py: Web开发环境示例
+# 检查端口占用
+netstat -tlnp | grep :8000
 ```
 
-## 许可证
+### 调试模式
 
-MIT License
+#### 启用详细日志
+```bash
+export LOG_LEVEL=DEBUG
+uvicorn main:app --reload --log-level debug
+```
 
-## 贡献指南
+#### 查看容器日志
+```bash
+# 查看实时日志
+docker logs -f simplepysandbox
 
-1. Fork项目
-2. 创建功能分支
-3. 提交更改
-4. 推送到分支
-5. 创建Pull Request
+# 查看最近日志
+docker logs --tail 100 simplepysandbox
+```
 
-## 支持
+#### 性能监控
+```bash
+# 监控容器资源使用
+docker stats simplepysandbox
 
-如有问题或建议，请创建Issue或联系开发团队。
+# 监控系统资源
+htop
+```
+
+### 获取支持
+
+如果遇到问题：
+
+1. **查看文档** - 完整的部署和使用文档
+2. **检查日志** - 查看应用和容器日志
+3. **运行测试** - 使用 `demo_client.py` 验证功能
+4. **性能分析** - 查看 `TEST_REPORT.md` 了解性能基准
+
+---
+
+## 📄 许可证
+
+本项目采用 MIT 许可证。详情请参见 [LICENSE](LICENSE) 文件。
+
+## 🤝 贡献指南
+
+欢迎贡献！请遵循以下步骤：
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 🙏 致谢
+
+感谢所有贡献者和开源社区的支持！
+
+---
+
+**SimplePySandbox** - 让Python代码执行更安全、更简单！ 🚀

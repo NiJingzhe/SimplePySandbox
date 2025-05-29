@@ -13,6 +13,10 @@ from sandbox.executor import CodeExecutor
 from sandbox.environment_manager import environment_manager
 from config.settings import settings
 
+# 初始化执行器和环境管理器
+executor = CodeExecutor()
+env_manager = environment_manager
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,8 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 初始化代码执行器
-executor = CodeExecutor()
+
 
 
 @app.get("/", tags=["Root"])
@@ -129,7 +132,7 @@ async def create_environment(env_script: EnvironmentScript):
         EnvironmentResponse: 创建的环境信息
     """
     try:
-        result = await environment_manager.create_environment(env_script)
+        result = await env_manager.create_environment(env_script)
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -146,7 +149,7 @@ async def list_environments():
         EnvironmentListResponse: 环境列表
     """
     try:
-        environments = environment_manager.list_environments()
+        environments = env_manager.list_environments()
         return EnvironmentListResponse(
             environments=environments,
             total=len(environments)
@@ -167,7 +170,7 @@ async def get_environment(environment_name: str):
         EnvironmentResponse: 环境信息
     """
     try:
-        env = environment_manager.get_environment(environment_name)
+        env = env_manager.get_environment(environment_name)
         if not env:
             raise HTTPException(status_code=404, detail=f"环境 '{environment_name}' 不存在")
         return env
@@ -189,7 +192,7 @@ async def delete_environment(environment_name: str):
         dict: 删除结果
     """
     try:
-        success = environment_manager.delete_environment(environment_name)
+        success = await env_manager.delete_environment(environment_name)
         if not success:
             raise HTTPException(status_code=404, detail=f"环境 '{environment_name}' 不存在")
         return {"message": f"环境 '{environment_name}' 已删除"}
@@ -228,7 +231,7 @@ async def execute_with_environment(request: ExecuteWithEnvironmentRequest):
             )
         
         # 检查环境是否存在
-        env = environment_manager.get_environment(request.environment)
+        env = env_manager.get_environment(request.environment)
         if not env:
             raise HTTPException(status_code=404, detail=f"环境 '{request.environment}' 不存在")
         

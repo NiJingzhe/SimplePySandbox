@@ -1,14 +1,72 @@
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
+# Git files
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
 .Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache
+
+# Virtual environments
+.venv
+venv/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation and reports
+*.md
+docs/
+DOCUMENTATION.md
+README.md
+TESTING.md
+*REPORT*.md
+
+# Test files and reports
+tests/reports/
+tests/coverage/
+*.log
+
+# Development files
+test_*.py
+test.sh
+
+# Build artifacts
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
+*.egg-info/
+
+# Temporary files
+tmp/
+temp/
 lib/
 lib64/
 parts/
