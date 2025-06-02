@@ -38,13 +38,11 @@
 - 🎛️ **自定义环境** - 创建和管理专用执行环境
 - 🐍 **多Python版本** - 支持不同Python版本
 - 📦 **包管理** - 灵活的依赖安装和管理
-- 🔧 **环境模板** - 预配置的常用环境
 
 ### 开发者友好
 - 📖 **完整文档** - Swagger UI自动生成API文档
 - 🛠️ **CLI工具** - 命令行环境管理工具
 - 💡 **示例客户端** - 功能完整的Python客户端
-- 🧪 **测试覆盖** - 全面的功能和性能测试
 
 ## ⚡ 快速开始
 
@@ -74,7 +72,8 @@ pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 # 生产模式 
-uvicorn main:app --host 0.0.0.0 --port 8000
+# 使用docker启动，否则无法安全隔离
+docker run -d -p 8000:8000 --name simplepysandbox simplepysandbox:latest
 ```
 
 ### 4. 验证服务
@@ -116,24 +115,11 @@ docker-compose up -d
 
 ### 本地开发部署
 
-#### Conda模式
+#### 裸服务启动，便于开发和调试
 
 ```bash
-# 设置执行模式
-export EXECUTION_MODE=conda
-
 # 启动服务
 uvicorn main:app --reload
-```
-
-#### 使用启动脚本
-
-```bash
-# Docker模式
-./docker.sh
-
-# Conda模式  
-./start_conda.sh
 ```
 
 ## 🔥 API示例
@@ -333,7 +319,7 @@ pip install -r requirements.txt
 python manage_environments.py --help
 ```
 
-### 基础命令
+### 基础命令(需要确保服务正在运行，如果修改了服务url请使用url参数传递)
 
 #### 1. 列出环境
 
@@ -375,6 +361,13 @@ python manage_environments.py create data-env ./environments/data.sh \
   --wait \
   --wait-timeout 15
 ```
+
+##### 2.1 参数说明：
+```bash
+python manage_environments.py create <name> <setup_script> [--description "描述"] [--python-version 3.11] [--wait] [--wait-timeout 10] [--url <服务地址>]
+```
+其中`setup_script`是环境配置脚本的路径，用于在环境创建后安装依赖以及一些自定义动作的执行。
+
 
 #### 3. 查看环境详情
 
@@ -467,7 +460,7 @@ done
 uvicorn main:app --host 0.0.0.0 --port 8000
 
 # 运行演示客户端
-python demo_client.py
+python example/demo_client.py
 ```
 
 ### 演示内容
@@ -663,42 +656,28 @@ SimplePySandbox/
 ├── Dockerfile                 # Docker镜像构建文件
 ├── docker-compose.yml         # Docker Compose配置
 ├── manage_environments.py     # CLI环境管理工具
-├── demo_client.py            # 演示客户端
-├── 
 ├── config/                   # 配置文件
 │   ├── __init__.py
 │   └── settings.py           # 应用设置
-├── 
 ├── models/                   # 数据模型
 │   ├── __init__.py
 │   ├── request.py           # 请求模型
 │   └── environment.py       # 环境模型
-├── 
 ├── sandbox/                  # 沙盒核心模块
 │   ├── __init__.py
 │   ├── executor.py          # 代码执行器
 │   ├── environment_manager.py # 环境管理器
 │   ├── security.py          # 安全模块
 │   └── utils.py             # 工具函数
-├── 
 ├── environments/             # 环境配置脚本
 │   └── pythonocc-stable.sh  # 示例环境脚本
-├── 
 ├── data/                     # 数据目录
 │   ├── environments.json    # 环境配置数据
 │   └── conda_envs/          # Conda环境数据
 ├── 
 ├── examples/                 # 示例代码
-│   ├── client_example.py    # 客户端示例
-│   └── advanced_example.py  # 高级用法示例
-├── 
-├── logs/                     # 日志目录
-├── 
-└── docs/                     # 文档
-    ├── DEPLOYMENT.md         # 部署指南
-    ├── TEST_REPORT.md        # 测试报告
-    ├── PROJECT_SUMMARY.md    # 项目总结
-    └── DOCKER.md            # Docker使用指南
+    ├── demo_client.py    # 客户端示例
+    └── advanced_example.py  # 高级用法示例
 ```
 
 ## 🔒 安全特性
