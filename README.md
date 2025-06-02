@@ -10,6 +10,19 @@
 [![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)](https://www.docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+
+## Why we build this ?
+
+实际上市面上有很多做的很好的sandbox项目，但大多是支持了在Web上运行Python代码的功能。或者是为了安全性有各种各样的限制，例如不能进行文件读写等等。
+
+而这样的限制对于LLM Application和Agent来说是非常不友好的，你需要通过Prompt来让模型把原本习惯于写入文件的东西写入一个字节流然后print到stdout上，这样的方式会导致很多问题，因为这种Pattern并不是模型原本的习惯。
+
+另外，例如Dify使用的sandbox基于libseccomp，同时只支持linux平台。这样的sandbox没有很好的兼容性，而且往往并不轻量。
+
+而SimplePySandbox的目标就是提供一个相对安全的Python代码执行环境，支持文件读写、网络请求等功能，同时又能保证一定程度的安全性和隔离性。而且足够轻量。
+
+同时，SimplePySandbox采用了Docker容器化技术，将每个代码执行请求都在独立的容器中运行，从而实现了安全隔离。同时，提供了灵活的API接口，方便用户进行自定义配置和扩展，使用Python进行开发也降低了开发难度。
+
 ## 📋 目录
 
 - [项目特性](#-项目特性)
